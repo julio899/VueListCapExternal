@@ -273,6 +273,8 @@ export default {
                           'success'
                         )
                       }
+                      self.update_current_suscriptors();
+                      self.lista_activa=null;
                       console.log(' JsonResource/RemoveListCaptureInternal ');
                   });
                 /**/
@@ -287,7 +289,7 @@ export default {
               )
             }
           })
-
+      this.update_current_suscriptors();
     },
     create_list:function(){
       anime({
@@ -366,7 +368,7 @@ export default {
     font-size: 20px;
     margin-right: 10px;
     font-weight: 100;
-    opacity: 0.5;
+    opacity: 0.3;
     
     -webkit-transition: .3s; /* Safari */
     transition: .3s;
