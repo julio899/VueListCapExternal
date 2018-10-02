@@ -1,7 +1,7 @@
 <template>
 <div class="flex">
       <span class="relative w-full" style="position: absolute;top: 20px;text-align: center;">
-				<input type="search" placeholder="Search" style="width:40%;background-color: rgba(70,70,70,0.5);" class="text-sm text-white transition border border-transparent focus:outline-none placeholder-white rounded py-1 px-2 pl-10 appearance-none leading-normal ds-input">
+				<input type="search" v-model="toSearch" placeholder="Search" style="width:40%;background-color: rgba(70,70,70,0.5);" class="text-sm text-white transition border border-transparent focus:outline-none placeholder-white rounded py-1 px-2 pl-10 appearance-none leading-normal ds-input">
 				<div class="absolute search-icon" style="top: .5rem;left: 29%;">
 				<svg class="fill-current pointer-events-none text-white w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
 					<path d="M12.9 14.32a8 8 0 1 1 1.41-1.41l5.35 5.33-1.42 1.42-5.33-5.34zM8 14A6 6 0 1 0 8 2a6 6 0 0 0 0 12z"></path>
@@ -12,8 +12,8 @@
 			<nav class="absolute lg:relative lg:flex lg:text-sm bg-indigo-darker lg:bg-transparent pin-l pin-r py-4 px-6 lg:pt-10 lg:pl-12 lg:pr-6 -mt-1 lg:mt-0 overflow-y-auto lg:w-1/5 lg:border-r z-40 hidden">
 				<ul class="list-reset mb-8 w-full">
 					<li class="ml-2 mb-4 flex">
-						<img src="@/assets/images/home-default.svg" alt="home-icon" class="w-4 h-4 mr-2">
-						<div class="hover:cursor-pointer text-white lg:text-indigo-darkest no-underline font-medium mobile-home-trigger">Administración Principal</div>
+						<img v-on:click="reset()" src="@/assets/images/home-default.svg" alt="home-icon" class="w-4 h-4 mr-2">
+						<div v-on:click="reset()" class="hover:cursor-pointer text-white lg:text-indigo-darkest no-underline font-medium mobile-home-trigger">Administración Principal</div>
 					</li>
 					<li class="ml-2 mb-4">
 						<div class="flex" id="sidenav-categories-trigger">
@@ -28,10 +28,14 @@
 							</div>
 						</div>
 						<ul class="text-grey lg:text-grey-dark list-reset leading-loose mt-2" id="sidenav-categories">
-             	<li v-for="(list, indice) in listas" class="text-right hover:text-indigo-dark hover:cursor-pointer transition-normal ml-1 border-l border-grey-dark pl-4" style="opacity: 1; transform: translateY(0px);">{{list.name}} <i v-on:click="delete_list($event)" :data-indice="indice" :data-idlist="list.id_list" :data-name="list.name" class="fas fa-trash"></i></li>
-							<li class="text-indigo-lighter lg:text-indigo-darker font-medium flex justify-between items-center hover:cursor-pointer transition-normal ml-1 border-l border-grey-dark pl-4 mobile-home-trigger" style="opacity: 1; transform: translateY(0px);">
+             	<li v-for="(list, indice) in listas" :key="indice" class="text-right hover:text-indigo-dark hover:cursor-pointer transition-normal ml-1 border-l border-grey-dark pl-4" style="opacity: 1; transform: translateY(0px);"> <span class="lbl-tag-list text-white rounded-full px-2 leading-normal" v-on:click="activar_list($event)"  :data-indice="indice" :data-idlist="list.id_list" :data-name="list.name">{{list.name}}</span> <i v-on:click="delete_list($event)" :data-indice="indice" :data-idlist="list.id_list" :data-name="list.name" class="fas fa-trash"></i></li>
+							<li v-if="lista_activa==null" class="text-indigo-lighter lg:text-indigo-darker font-medium flex justify-between items-center hover:cursor-pointer transition-normal ml-1 border-l border-grey-dark pl-4 mobile-home-trigger" style="opacity: 1; transform: translateY(0px);">
 								<span>Suscriptores Totales</span>
-								<span class="bg-indigo-dark text-white text-xs rounded-full px-2 leading-normal">7</span>
+								<span class="bg-indigo-dark text-white text-xs rounded-full px-2 leading-normal">{{get_count_all_suscriptors()}}</span>
+							</li>
+              <li v-if="lista_activa!=null" class="text-indigo-lighter lg:text-indigo-darker font-medium flex justify-between items-center hover:cursor-pointer transition-normal ml-1 border-l border-grey-dark pl-4 mobile-home-trigger" style="opacity: 1; transform: translateY(0px);">
+								<span>Suscriptores en {{lista_activa.name}}</span>
+								<span class="bg-indigo-dark text-white text-xs rounded-full px-2 leading-normal">{{get_count_all_suscriptors()}}</span>
 							</li>
 						</ul>
 					</li>
@@ -50,11 +54,13 @@
 				<!-- Title -->
 				<div class="px-6 md:px-0 flex justify-between items-center -order-1">
 					<div>
-						<h2 class="font-normal">Lista de Suscriptores</h2>
-						<p class="text-grey-dark mt-2">en General (Todas las Listas)</p>
+						<h2 class="font-normal" v-if="lista_activa==null">Lista de Suscriptores</h2>
+						<h2 class="font-normal" v-if="lista_activa!=null">Lista {{lista_activa.name}}</h2>
+						<p class="text-grey-dark mt-2" v-if="lista_activa==null">en General (Todas las Listas)</p>
 					</div>
 					<button style="position: absolute;right: 12%;" class="bg-indigo-dark hover:bg-indigo-darker text-white text-sm py-2 px-4 rounded-full transition-normal hover:shadow hover:translate-y-1 active:translate-y-1 focus:outline-none">Agregar Suscriptor</button>
-					<button style="background-color: teal;" class="text-white text-sm py-2 px-4 rounded-full transition-normal hover:shadow hover:translate-y-1 active:translate-y-1 focus:outline-none">Export Global</button>
+					<button v-if="lista_activa==null" style="background-color: teal;" class="text-white text-sm py-2 px-4 rounded-full transition-normal hover:shadow hover:translate-y-1 active:translate-y-1 focus:outline-none">Export Global</button>
+				  <button v-if="lista_activa!=null" style="background-color: teal;" class="text-white text-sm py-2 px-4 rounded-full transition-normal hover:shadow hover:translate-y-1 active:translate-y-1 focus:outline-none">Export Lista</button>
 				</div>
 				<!-- Desktop Stats -->
 				<div class="hidden px-6 md:px-0 mt-4 md:flex flex-wrap order-1 md:-order-1 md:shadow-md js-tab-pane" id="section-stats">
@@ -69,20 +75,10 @@
 								</tr>
 							</thead>
 							<tbody class="p-2 leading-loose text-sm">
-								<tr class="border-b">
-									<td class="py-2 txt-left">Yohji Yamamoto</td>
-									<td class="py-2 text-left">Yohji@Yamamoto.com</td>
+								<tr v-for="(suscriptor, indice) in suscriptores" :key="indice" class="border-b">
+									<td class="py-2 txt-left">{{suscriptor.name}}</td>
+									<td class="py-2 text-left">{{suscriptor.email}}</td>
 									<td class="py-2 text-right">Usa</td>
-								</tr>
-								<tr class="border-b">
-									<td class="py-2 txt-left">Sato Oki</td>
-									<td class="py-2 text-left">Sato@oki.com</td>
-									<td class="py-2 text-right">Eu</td>
-								</tr>
-								<tr>
-									<td class="py-2 txt-left">Amaya Arzuaga</td>
-									<td class="py-2 text-left">Amaya@arzuaga.com</td>
-									<td class="py-2 text-right">Spain</td>
 								</tr>
 							</tbody>
 						</table>
@@ -127,6 +123,7 @@ export default {
                                 });*/
 
                                  self.listas=data.data;
+                                 self.update_current_suscriptors();
                                  //var r=JSON.parse(data); 
 
                             });
@@ -134,10 +131,104 @@ export default {
   },
   data(){
     return{
-      listas:[]
+      listas:[],
+      lista_activa:null,
+      suscriptores:[],
+      toSearch:''
+    }
+  },
+  watch:{
+    lista_activa:function(v) {
+      this.update_current_suscriptors();
+    },
+    toSearch:function(v) {
+      this.update_current_suscriptors();
     }
   },
   methods:{
+    update_current_suscriptors:function(){
+      this.suscriptores=[];
+      for(let o=0;o<this.listas.length;o++){
+        if(this.lista_activa==null)
+        {
+            this.listas[o].users.forEach(suscriptor => {
+              
+              if(this.toSearch.trim().length==0||this.toSearch.trim()=='')
+              {
+                this.suscriptores.push(suscriptor);
+                console.log('toSearch vacio');
+              }else{
+                //si no esta vacio toSearch
+                //si coincide con el nombre o el Email lo incluimos
+                if(suscriptor.name.trim().toLowerCase().includes(this.toSearch.trim().toLowerCase())||suscriptor.email.trim().toLowerCase().includes(this.toSearch.trim().toLowerCase()))
+                {
+                  this.suscriptores.push(suscriptor);
+                }
+              }
+
+            });
+            //closed foreach users suscriptor
+        }else{
+          if(this.listas[o].id_list==this.lista_activa.id)
+          {
+            this.listas[o].users.forEach(suscriptor => {
+                if(this.toSearch.trim().length==0||this.toSearch.trim()=='')
+                {
+                  this.suscriptores.push(suscriptor);
+                  console.log('toSearch vacio en lista especifica');
+                }else{
+                  //si no esta vacio toSearch
+                  //si coincide con el nombre o el Email lo incluimos
+                  if(suscriptor.name.trim().toLowerCase().includes(this.toSearch.trim().toLowerCase())||suscriptor.email.trim().toLowerCase().includes(this.toSearch.trim().toLowerCase()))
+                  {
+                    this.suscriptores.push(suscriptor);
+                  }
+                }
+            });
+            
+          }
+        }
+      }
+
+    },
+    get_count_all_suscriptors:function(){
+      let acumulado=0;
+      for(let o=0;o<this.listas.length;o++){
+        if(this.lista_activa==null)
+        {
+          acumulado+=parseInt(this.listas[o].users.length);
+        }else{
+          if(this.listas[o].id_list==this.lista_activa.id)
+          {
+            acumulado+=parseInt(this.listas[o].users.length);    
+          }
+        }
+      }
+      return acumulado;
+    },
+    reset:function(){
+      this.lista_activa=null;
+      this.remover_activo_in_list();
+    },
+    activar_list:function(actual){
+      this.remover_activo_in_list();
+      console.log(actual.currentTarget);
+      actual.currentTarget.classList.add('activo');
+      this.lista_activa={
+        name:actual.currentTarget.dataset.name,
+        id:actual.currentTarget.dataset.idlist,
+        indice:actual.currentTarget.dataset.indice
+      };
+    },
+    remover_activo_in_list:function(){
+      //document.getElementsByClassName('lbl-tag-list')[0].classList.remove('activo');
+      var list=document.getElementsByClassName('lbl-tag-list');
+      
+      for (let index = 0; index < list.length; index++) {
+        list[index].classList.remove('activo');
+        console.log(list[index].classList);     
+      }
+    },
     delete_list:function(e){
       console.log(e.currentTarget.dataset.idlist+' '+e.currentTarget.dataset.name);
       var id_list=e.currentTarget.dataset.idlist;
@@ -230,7 +321,7 @@ export default {
                       console.log(data.data);
                       if(data.data.status==true)
                       {
-                        self.listas.push({name:txt,id_list:data.data.id,status:'A'});
+                        self.listas.push({name:txt,id_list:data.data.id,status:'A',users:[]});
                       }
                       console.log(' JsonResource/regListCaptureInternal ');
                   });
@@ -265,7 +356,38 @@ export default {
 </style> 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-.fas.fa-trash:hover{ color:red; }
+.activo{
+  opacity: 1!important;
+}
+
+.lbl-tag-list{
+    color: white;
+    background-color: rgba(59, 170, 12, 0.8);
+    font-size: 20px;
+    margin-right: 10px;
+    font-weight: 100;
+    opacity: 0.5;
+    
+    -webkit-transition: .3s; /* Safari */
+    transition: .3s;
+}
+
+.lbl-tag-list:hover{
+    color: white;
+    background-color: rgba(255, 127, 0, 0.96);
+    font-weight: bold;
+    opacity: 1;
+} 
+
+.lbl-tag-list:active{
+    background-color: #00baba;
+    opacity: 1!important;
+    transform: scale(1.5)!important;
+}
+
+.fas.fa-trash{ font-size: 20px; }
+.fas.fa-trash:hover{ color:red;font-size: 20px; }
+.fas.fa-trash:active{ transform:scale(1.5)!important; }
 /*! normalize.css v7.0.0 | MIT License | github.com/necolas/normalize.css */
 
 /* Document
